@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, Vehicle } from '../lib/supabase'
 import { PhotoUploadManager } from './PhotoUploadManager'
 import { VehicleForm } from './VehicleForm'
-import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign, Trash2 } from 'lucide-react' // Added Trash2
+import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign, Trash2 } from 'lucide-react'
 
 interface VehiclePriceUpdateProps {
   vehicle: Vehicle
@@ -90,9 +90,32 @@ export function SalespersonUpload() {
       .from('vehicles')
       .select('*')
       // Fetch all vehicles regardless of status
+      // Fetch all vehicles regardless of status
       .order('created_at', { ascending: false })
     
     setVehicles(data || [])
+  }
+
+  // Function to handle vehicle deletion
+  async function handleDeleteVehicle(id: string, stockNumber: string) {
+    if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
+      try {
+        const { error } = await supabase
+          .from('vehicles')
+          .delete()
+          .eq('id', id)
+        
+        if (error) {
+          alert('Error deleting vehicle: ' + error.message)
+        } else {
+          alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
+          fetchVehicles() // Refresh the list
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error)
+        alert('An unexpected error occurred while deleting the vehicle.')
+      }
+    }
   }
 
   // Function to handle vehicle deletion
@@ -297,7 +320,7 @@ export function SalespersonUpload() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      {vehicle.status === 'sold' && ( // Conditional rendering for sold vehicles
+                      {vehicle.status === 'sold' && (
                         <button
                           onClick={() => handleDeleteVehicle(vehicle.id, vehicle.stock_number)}
                           className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-medium flex items-center"
@@ -306,7 +329,7 @@ export function SalespersonUpload() {
                           Delete Vehicle
                         </button>
                       )}
-                      {vehicle.status === 'active' && ( // Conditional rendering for active vehicles
+                      {vehicle.status === 'active' && (
                         <button
                           onClick={() => setSelectedVehicle(vehicle)}
                           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
