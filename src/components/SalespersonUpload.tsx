@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, Vehicle } from '../lib/supabase'
 import { PhotoUploadManager } from './PhotoUploadManager'
+import { VehicleForm } from './VehicleForm'
 import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign } from 'lucide-react'
 
 interface VehiclePriceUpdateProps {
@@ -74,6 +75,7 @@ export function SalespersonUpload() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loginCode, setLoginCode] = useState('')
+  const [showAddVehicle, setShowAddVehicle] = useState(false) // ADDED THIS LINE
 
   const UPLOAD_CODE = 'upload123'
 
@@ -204,17 +206,41 @@ export function SalespersonUpload() {
       {!selectedVehicle ? (
         <div>
           <div className="mb-6 bg-white p-6 rounded-lg shadow-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Search by make, model, year, or stock number..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  placeholder="Search by make, model, year, or stock number..."
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              {/* ADDED THIS BUTTON */}
+              <button
+                onClick={() => setShowAddVehicle(true)}
+                className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 font-medium flex items-center whitespace-nowrap"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Vehicle
+              </button>
             </div>
           </div>
+
+          {/* ADDED THIS CONDITIONAL BLOCK */}
+          {showAddVehicle && (
+            <div className="mb-6">
+              <VehicleForm
+                vehicle={null}
+                onSave={() => {
+                  setShowAddVehicle(false)
+                  fetchVehicles()
+                }}
+                onCancel={() => setShowAddVehicle(false)}
+              />
+            </div>
+          )}
 
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b border-gray-200">
@@ -304,3 +330,4 @@ export function SalespersonUpload() {
     </div>
   )
 }
+
