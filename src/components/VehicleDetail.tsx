@@ -37,7 +37,6 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
         .from('vehicle_photos')
         .select('*')
         .eq('vehicle_id', vehicleId)
-        .order('photo_type')
         .order('sort_order')
 
       if (photosError) {
