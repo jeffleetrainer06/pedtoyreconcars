@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, Vehicle } from '../lib/supabase'
 import { PhotoUploadManager } from './PhotoUploadManager'
 import { VehicleForm } from './VehicleForm'
-import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign } from 'lucide-react' trash
+import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign, Trash2 } from 'lucide-react' // Added Trash2
 
 interface VehiclePriceUpdateProps {
   vehicle: Vehicle
@@ -83,38 +83,38 @@ export function SalespersonUpload() {
     if (isAuthenticated) {
       fetchVehicles()
     }
-    // Function to handle vehicle deletion
-async function handleDeleteVehicle(id: string, stockNumber: string) {
-  if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
-    try {
-      const { error } = await supabase
-        .from('vehicles')
-        .delete()
-        .eq('id', id)
-      
-      if (error) {
-        alert('Error deleting vehicle: ' + error.message)
-      } else {
-        alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
-        fetchVehicles() // Refresh the list
-      }
-    } catch (error) {
-      console.error('Error deleting vehicle:', error)
-      alert('An unexpected error occurred while deleting the vehicle.')
-    }
-  }
-}
-
   }, [isAuthenticated])
 
   async function fetchVehicles() {
     const { data } = await supabase
       .from('vehicles')
       .select('*')
-      .eq('status', 'active')
+      // Fetch all vehicles regardless of status
       .order('created_at', { ascending: false })
     
     setVehicles(data || [])
+  }
+
+  // Function to handle vehicle deletion
+  async function handleDeleteVehicle(id: string, stockNumber: string) {
+    if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
+      try {
+        const { error } = await supabase
+          .from('vehicles')
+          .delete()
+          .eq('id', id)
+        
+        if (error) {
+          alert('Error deleting vehicle: ' + error.message)
+        } else {
+          alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
+          fetchVehicles() // Refresh the list
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error)
+        alert('An unexpected error occurred while deleting the vehicle.')
+      }
+    }
   }
 
   const handleLogin = (e: React.FormEvent) => {
@@ -208,8 +208,8 @@ async function handleDeleteVehicle(id: string, stockNumber: string) {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Photo Upload System</h1>
-            <p className="text-gray-600 mt-2">Welcome, {salespersonName}! Upload photos for vehicles in reconditioning.</p>
+            <h1 className="text-3xl font-bold text-gray-900">Vehicle Management System</h1>
+            <p className="text-gray-600 mt-2">Welcome, {salespersonName}! Manage vehicles and upload photos.</p>
           </div>
           <button
             onClick={() => {
@@ -265,14 +265,17 @@ async function handleDeleteVehicle(id: string, stockNumber: string) {
           <div className="bg-white rounded-lg shadow-md">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
-                Select Vehicle to Upload Photos ({filteredVehicles.length} available)
+                Vehicle Management ({filteredVehicles.length} total)
               </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Upload photos for active vehicles • Delete sold vehicles to keep inventory clean
+              </p>
             </div>
             <div className="divide-y divide-gray-200">
               {filteredVehicles.map((vehicle) => (
                 <div key={vehicle.id} className="p-6 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900">
                         {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
                       </h3>
@@ -282,14 +285,36 @@ async function handleDeleteVehicle(id: string, stockNumber: string) {
                         <span>${vehicle.price.toLocaleString()}</span>
                         <span className="mx-2">•</span>
                         <span>{vehicle.exterior_color}</span>
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                          vehicle.status === 'active' 
+                            ? 'bg-green-100 text-green-800'
+                            : vehicle.status === 'sold'
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {vehicle.status.toUpperCase()}
+                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setSelectedVehicle(vehicle)}
-                      className="bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 font-medium text-base whitespace-nowrap"
-                    >
-                      Upload Photos
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      {vehicle.status === 'sold' && ( // Conditional rendering for sold vehicles
+                        <button
+                          onClick={() => handleDeleteVehicle(vehicle.id, vehicle.stock_number)}
+                          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-medium flex items-center"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Vehicle
+                        </button>
+                      )}
+                      {vehicle.status === 'active' && ( // Conditional rendering for active vehicles
+                        <button
+                          onClick={() => setSelectedVehicle(vehicle)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
+                        >
+                          Upload Photos
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -301,7 +326,7 @@ async function handleDeleteVehicle(id: string, stockNumber: string) {
               <Car className="mx-auto h-16 w-16 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No vehicles found</h3>
               <p className="text-gray-500">
-                {searchTerm ? 'Try adjusting your search criteria.' : 'No vehicles available for photo upload.'}
+                {searchTerm ? 'Try adjusting your search criteria.' : 'No vehicles available for management.'}
               </p>
             </div>
           )}
