@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#DC2626"/>
+  
+  <!-- Toyota Logo Inspired Design -->
+  <g transform="translate(96, 128)">
+    <!-- Outer Ring -->
+    <ellipse cx="160" cy="128" rx="144" ry="104" fill="none" stroke="white" stroke-width="16"/>
+    
+    <!-- Inner Horizontal Oval -->
+    <ellipse cx="160" cy="128" rx="80" ry="52" fill="none" stroke="white" stroke-width="12"/>
+    
+    <!-- Inner Vertical Oval -->
+    <ellipse cx="160" cy="128" rx="52" ry="80" fill="none" stroke="white" stroke-width="12"/>
+    
+    <!-- Center Circle -->
+    <circle cx="160" cy="128" r="20" fill="white"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="256" y="380" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="42" font-weight="bold">TOYOTA</text>
+  <text x="256" y="420" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32">PHOTOS</text>
+</svg>
