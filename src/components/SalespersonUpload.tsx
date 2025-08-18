@@ -75,7 +75,7 @@ export function SalespersonUpload() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [loginCode, setLoginCode] = useState('')
-  const [showAddVehicle, setShowAddVehicle] = useState(false) // ADDED THIS LINE
+  const [showAddVehicle, setShowAddVehicle] = useState(false)
 
   const UPLOAD_CODE = 'upload123'
 
@@ -217,7 +217,6 @@ export function SalespersonUpload() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {/* ADDED THIS BUTTON */}
               <button
                 onClick={() => setShowAddVehicle(true)}
                 className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 font-medium flex items-center whitespace-nowrap"
@@ -228,7 +227,6 @@ export function SalespersonUpload() {
             </div>
           </div>
 
-          {/* ADDED THIS CONDITIONAL BLOCK */}
           {showAddVehicle && (
             <div className="mb-6">
               <VehicleForm
@@ -330,4 +328,3 @@ export function SalespersonUpload() {
     </div>
   )
 }
-
