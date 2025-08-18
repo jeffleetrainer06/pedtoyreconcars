@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, Vehicle } from '../lib/supabase'
 import { PhotoUploadManager } from './PhotoUploadManager'
 import { VehicleForm } from './VehicleForm'
-import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign } from 'lucide-react'
+import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign } from 'lucide-react' trash
 
 interface VehiclePriceUpdateProps {
   vehicle: Vehicle
@@ -83,6 +83,28 @@ export function SalespersonUpload() {
     if (isAuthenticated) {
       fetchVehicles()
     }
+    // Function to handle vehicle deletion
+async function handleDeleteVehicle(id: string, stockNumber: string) {
+  if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
+    try {
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id)
+      
+      if (error) {
+        alert('Error deleting vehicle: ' + error.message)
+      } else {
+        alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
+        fetchVehicles() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting vehicle:', error)
+      alert('An unexpected error occurred while deleting the vehicle.')
+    }
+  }
+}
+
   }, [isAuthenticated])
 
   async function fetchVehicles() {
