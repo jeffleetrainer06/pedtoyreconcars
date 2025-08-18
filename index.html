@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Toyota Photos" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="google" content="notranslate" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Toyota Photos" />
+    <meta name="msapplication-TileColor" content="#dc2626" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-startup-image" href="/icon-512.png" />
+    <title>Pedersen Dealership - Pre-Owned Vehicles</title>
+    <script>
+      // Prevent Google from intercepting the URL
+      if (window.location.search.includes('google') || document.referrer.includes('google')) {
+        // Clear any Google parameters
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        }
+      }
+      
+      // Mobile detection and guidance
+      function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      }
+      
+      if (isMobile()) {
+        console.log('Mobile device detected - Toyota system optimized for mobile use');
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
