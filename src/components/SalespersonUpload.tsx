@@ -89,14 +89,11 @@ export function SalespersonUpload() {
     const { data } = await supabase
       .from('vehicles')
       .select('*')
-      // Fetch all vehicles regardless of status
-      // Fetch all vehicles regardless of status
       .order('created_at', { ascending: false })
     
     setVehicles(data || [])
   }
 
-  // Function to handle vehicle deletion
   async function handleDeleteVehicle(id: string, stockNumber: string) {
     if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
       try {
@@ -109,29 +106,7 @@ export function SalespersonUpload() {
           alert('Error deleting vehicle: ' + error.message)
         } else {
           alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
-          fetchVehicles() // Refresh the list
-        }
-      } catch (error) {
-        console.error('Error deleting vehicle:', error)
-        alert('An unexpected error occurred while deleting the vehicle.')
-      }
-    }
-  }
-
-  // Function to handle vehicle deletion
-  async function handleDeleteVehicle(id: string, stockNumber: string) {
-    if (confirm(`Are you sure you want to delete vehicle Stock #${stockNumber}? This action cannot be undone.`)) {
-      try {
-        const { error } = await supabase
-          .from('vehicles')
-          .delete()
-          .eq('id', id)
-        
-        if (error) {
-          alert('Error deleting vehicle: ' + error.message)
-        } else {
-          alert(`Vehicle Stock #${stockNumber} deleted successfully.`)
-          fetchVehicles() // Refresh the list
+          fetchVehicles()
         }
       } catch (error) {
         console.error('Error deleting vehicle:', error)
@@ -320,15 +295,13 @@ export function SalespersonUpload() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      {vehicle.status === 'sold' && (
-                        <button
-                          onClick={() => handleDeleteVehicle(vehicle.id, vehicle.stock_number)}
-                          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-medium flex items-center"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Vehicle
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDeleteVehicle(vehicle.id, vehicle.stock_number)}
+                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-medium flex items-center"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Vehicle
+                      </button>
                       {vehicle.status === 'active' && (
                         <button
                           onClick={() => setSelectedVehicle(vehicle)}
@@ -379,11 +352,9 @@ export function SalespersonUpload() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Upload Vehicle Photos</h3>
             
-            {/* Vehicle Price Update Section */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-3">Update Vehicle Price</h4>
               <VehiclePriceUpdate vehicle={selectedVehicle} onUpdate={() => {
-                // Refresh the selected vehicle data
                 fetchVehicles().then(() => {
                   const updated = vehicles.find(v => v.id === selectedVehicle.id)
                   if (updated) setSelectedVehicle(updated)
