@@ -26,8 +26,11 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
   })
   const [newFeature, setNewFeature] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [stockError, setStockError] = useState('')
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     if (vehicle) {
       setFormData({
         stock_number: vehicle.stock_number,
@@ -48,30 +51,92 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
     }
   }, [vehicle])
 
+  const checkStockNumber = async (stockNumber: string) => {
+    if (!stockNumber.trim()) {
+      setStockError('')
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('stock_number', stockNumber.trim())
+        .neq('id', vehicle?.id || '')
+
+      if (error) {
+        console.error('Error checking stock number:', error)
+        return
+      }
+
+      if (data && data.length > 0) {
+        setStockError('This stock number already exists. Please use a different one.')
+      } else {
+        setStockError('')
+      }
+    } catch (error) {
+      console.error('Error checking stock number:', error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (stockError) {
+      alert('Please fix the stock number error before saving.')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
+      console.log('Attempting to save vehicle with data:', formData)
+      
+      if (!supabase) {
+        alert('Database connection not available. Please refresh the page and try again.')
+        setIsSubmitting(false)
+        return
+      }
+
       if (vehicle) {
+        console.log('Updating existing vehicle:', vehicle.id)
         const { error } = await supabase
           .from('vehicles')
           .update(formData)
           .eq('id', vehicle.id)
         
-        if (error) throw error
+        if (error) {
+          console.error('Update error:', error)
+          throw error
+        }
       } else {
+        console.log('Creating new vehicle')
         const { error } = await supabase
           .from('vehicles')
           .insert(formData)
         
-        if (error) throw error
+        if (error) {
+          console.error('Insert error:', error)
+          throw error
+        }
       }
 
+      console.log('Vehicle saved successfully')
       onSave()
     } catch (error) {
       console.error('Error saving vehicle:', error)
-      alert('Error saving vehicle. Please try again.')
+      
+      if (error?.code === '23505' && error?.message?.includes('vehicles_stock_number_key')) {
+        alert('This stock number already exists. Please use a different stock number.')
+      } else if (error?.code === '23502') {
+        alert('Please fill in all required fields (marked with *).')
+      } else if (error?.message?.includes('JWT')) {
+        alert('Session expired. Please refresh the page and try again.')
+      } else if (error?.message?.includes('network')) {
+        alert('Network error. Please check your internet connection and try again.')
+      } else {
+        alert(`Error saving vehicle: ${error?.message || 'Unknown error'}. Please try again.`)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -109,10 +174,20 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
             <input
               type="text"
               required
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className={`w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 ${
+                stockError ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               value={formData.stock_number}
-              onChange={(e) => setFormData(prev => ({ ...prev, stock_number: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value
+                setFormData(prev => ({ ...prev, stock_number: value }))
+                checkStockNumber(value)
+              }}
+              onBlur={(e) => checkStockNumber(e.target.value)}
             />
+            {stockError && (
+              <p className="text-red-600 text-sm mt-1">{stockError}</p>
+            )}
           </div>
 
           <div>
@@ -140,9 +215,43 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
               value={formData.make}
               onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
             >
-              <option value="Toyota">Toyota</option>
+              <option value="Acura">Acura</option>
+              <option value="Alfa Romeo">Alfa Romeo</option>
+              <option value="Audi">Audi</option>
+              <option value="BMW">BMW</option>
+              <option value="Buick">Buick</option>
+              <option value="Cadillac">Cadillac</option>
+              <option value="Chevrolet">Chevrolet</option>
+              <option value="Chrysler">Chrysler</option>
+              <option value="Dodge">Dodge</option>
+              <option value="Ford">Ford</option>
+              <option value="Genesis">Genesis</option>
+              <option value="GMC">GMC</option>
+              <option value="Honda">Honda</option>
+              <option value="Hyundai">Hyundai</option>
+              <option value="Infiniti">Infiniti</option>
+              <option value="Jaguar">Jaguar</option>
+              <option value="Jeep">Jeep</option>
+              <option value="Kia">Kia</option>
+              <option value="Land Rover">Land Rover</option>
               <option value="Lexus">Lexus</option>
-              <option value="Other">Other</option>
+              <option value="Lincoln">Lincoln</option>
+              <option value="Lucid">Lucid</option>
+              <option value="Maserati">Maserati</option>
+              <option value="Mazda">Mazda</option>
+              <option value="Mercedes-Benz">Mercedes-Benz</option>
+              <option value="Mini">Mini</option>
+              <option value="Mitsubishi">Mitsubishi</option>
+              <option value="Nissan">Nissan</option>
+              <option value="Polestar">Polestar</option>
+              <option value="Porsche">Porsche</option>
+              <option value="Ram">Ram</option>
+              <option value="Rivian">Rivian</option>
+              <option value="Subaru">Subaru</option>
+              <option value="Tesla">Tesla</option>
+              <option value="Toyota">Toyota</option>
+              <option value="Volkswagen">Volkswagen</option>
+              <option value="Volvo">Volvo</option>
             </select>
           </div>
 
@@ -192,12 +301,14 @@ export function VehicleForm({ vehicle, onSave, onCancel }: VehicleFormProps) {
               type="number"
               required
               min="0"
-              step="100"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              placeholder="Enter selling price"
+              placeholder="Enter selling price (or 0 if unknown)"
               value={formData.price}
-              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              You can enter 0 now and update the price later in the photo upload section
+            </p>
           </div>
 
           <div>
