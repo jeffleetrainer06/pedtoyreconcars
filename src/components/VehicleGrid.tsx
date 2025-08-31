@@ -17,18 +17,27 @@ export function VehicleGrid() {
     try {
       if (!supabase) {
         console.error('Supabase client not initialized')
+        setVehicles([])
         return
       }
       
-      let { data, error } = await supabase.from('vehicles').select('*')
+      let { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
 
       if (error) {
-        alert(error.message)
+        console.error('Error fetching vehicles:', error)
+        alert('Error loading vehicles: ' + error.message)
         return
       }
+      
+      console.log('Fetched vehicles:', data)
       setVehicles(data || [])
     } catch (error) {
       console.error('Error fetching vehicles:', error)
+      alert('Failed to load vehicles. Please refresh the page.')
     } finally {
       setLoading(false)
     }
