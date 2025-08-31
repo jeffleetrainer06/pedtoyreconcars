@@ -1,4 +1,4 @@
-import { Car } from 'lucide-react'
+import { Car, Share2 } from 'lucide-react'
 import { Link } from './Link'
 
 interface HeaderProps {
@@ -6,6 +6,28 @@ interface HeaderProps {
 }
 
 export function Header({ isAdmin = false }: HeaderProps) {
+  const shareApp = () => {
+    const url = window.location.origin
+    const text = `Check out our pre-owned vehicle inventory at Pedersen Toyota`
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Pedersen Toyota - Pre-Owned Vehicles',
+        text: text,
+        url: url
+      }).catch(console.error)
+    } else {
+      // Fallback for browsers without Web Share API
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!\n\nYou can now paste this link in a text message to send to customers. The link will work on any phone or computer.')
+      }).catch(() => {
+        // Final fallback
+        const message = `Copy this link to share with customers:\n\n${url}\n\nThis link works on any phone or computer and shows our current pre-owned inventory.`
+        prompt('Share this link with customers:', url)
+      })
+    }
+  }
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,6 +47,13 @@ export function Header({ isAdmin = false }: HeaderProps) {
             <Link href="/upload" className="text-gray-700 hover:text-red-600 font-medium text-sm sm:text-base">
               Upload Photos
             </Link>
+            <button
+              onClick={shareApp}
+              className="text-gray-700 hover:text-red-600 font-medium text-sm sm:text-base flex items-center"
+            >
+              <Share2 className="h-4 w-4 mr-1" />
+              Share
+            </button>
             {isAdmin && (
               <Link href="/admin" className="text-red-600 hover:text-red-700 font-medium text-sm sm:text-base">
                 Admin Dashboard
