@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, Vehicle } from '../lib/supabase'
 import { PhotoUploadManager } from './PhotoUploadManager'
 import { VehicleForm } from './VehicleForm'
-import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign, Trash2 } from 'lucide-react'
+import { Car, Lock, User, Search, Plus, CheckCircle, DollarSign, Trash2, Share2 } from 'lucide-react'
 
 interface VehiclePriceUpdateProps {
   vehicle: Vehicle
@@ -79,6 +79,25 @@ export function SalespersonUpload() {
 
   const UPLOAD_CODE = 'upload123'
 
+  const shareApp = () => {
+    const url = window.location.origin
+    const text = `Hi! Here's our current pre-owned vehicle inventory at Pedersen Toyota. You can view all available vehicles and submit inquiries directly through this link`
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Pedersen Toyota - Pre-Owned Vehicles',
+        text: text,
+        url: url
+      }).catch(console.error)
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!\n\nSample text message:\n"Hi [Customer Name], here\'s our current pre-owned inventory. You can view all vehicles and submit inquiries: [PASTE LINK HERE]"\n\nThe link works perfectly on any phone or computer.')
+      }).catch(() => {
+        prompt('Share this link with customers:', url)
+      })
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchVehicles()
@@ -86,12 +105,30 @@ export function SalespersonUpload() {
   }, [isAuthenticated])
 
   async function fetchVehicles() {
-    const { data } = await supabase
-      .from('vehicles')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    setVehicles(data || [])
+    try {
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        setVehicles([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching vehicles:', error)
+        alert('Error loading vehicles: ' + error.message)
+        return
+      }
+      
+      console.log('Fetched vehicles for salesperson:', data)
+      setVehicles(data || [])
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+      alert('Failed to load vehicles. Please refresh the page.')
+    }
   }
 
   async function handleDeleteVehicle(id: string, stockNumber: string) {
@@ -117,10 +154,19 @@ export function SalespersonUpload() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    if ((loginCode === UPLOAD_CODE || loginCode === 'test') && salespersonName.trim()) {
+    e.stopPropagation()
+    if (loginCode.trim() === UPLOAD_CODE && salespersonName.trim()) {
       setIsAuthenticated(true)
     } else {
-      alert('Invalid code or missing name. Please try again.')
+      alert('Please enter both your name and the correct upload code.')
+    }
+  }
+
+  const handleInputChange = (field: 'salespersonName' | 'loginCode', value: string) => {
+    if (field === 'salespersonName') {
+      setSalespersonName(value)
+    } else {
+      setLoginCode(value)
     }
   }
 
@@ -160,10 +206,13 @@ export function SalespersonUpload() {
               <input
                 type="text"
                 required
+                autoComplete="name"
+                inputMode="text"
                 placeholder="Enter your name"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base"
                 value={salespersonName}
-                onChange={(e) => setSalespersonName(e.target.value)}
+                onChange={(e) => handleInputChange('salespersonName', e.target.value)}
+                onInput={(e) => handleInputChange('salespersonName', (e.target as HTMLInputElement).value)}
               />
             </div>
 
@@ -175,19 +224,43 @@ export function SalespersonUpload() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
+                inputMode="text"
                 placeholder="Enter upload code"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 text-base"
                 value={loginCode}
-                onChange={(e) => setLoginCode(e.target.value)}
+                onChange={(e) => handleInputChange('loginCode', e.target.value)}
+                onInput={(e) => handleInputChange('loginCode', (e.target as HTMLInputElement).value)}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 font-medium"
+              className="w-full bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 font-medium text-base touch-manipulation"
             >
-              Access Photo Upload
+              Sign In
             </button>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={shareApp}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium flex items-center"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share App with Customers
+              </button>
+              <button
+                onClick={() => {
+                  setIsAuthenticated(false)
+                  setSalespersonName('')
+                  setLoginCode('')
+                  setSelectedVehicle(null)
+                }}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
           </form>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-md">
@@ -245,7 +318,21 @@ export function SalespersonUpload() {
                 Add Vehicle
               </button>
             </div>
+            
+                                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">📱 Photo Upload Tips:</h4>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>• <strong>Camera mode:</strong> Take new photos directly with your phone camera</li>
+                <li>• <strong>Gallery mode:</strong> Upload photos you've already taken and saved</li>
+                <li>• You can mix both modes - take some photos now, upload others later</li>
+                <li>• <strong>Large photos:</strong> No need to crop - photos are automatically compressed</li>
+                <li>• <strong>Large photos:</strong> All photos are automatically compressed - no need to crop!</li>
+                <li>• <strong>Share with customers:</strong> Use "Share App with Customers" button to text the link</li>
+                <li>• <strong>Share with customers:</strong> Use the "Share with Customers" button above</li>
+              </ul>
+            </div>
           </div>
+
 
           {showAddVehicle && (
             <div className="mb-6">
@@ -369,3 +456,4 @@ export function SalespersonUpload() {
     </div>
   )
 }
+
