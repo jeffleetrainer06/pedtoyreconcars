@@ -1,9 +1,53 @@
 import { useState, useEffect } from 'react'
 import { supabase, VehiclePhoto } from '../lib/supabase'
-import { Upload, X, Camera } from 'lucide-react'
+import { Upload, X, Camera, Image, Smartphone, Share2 } from 'lucide-react'
 
 interface PhotoUploadManagerProps {
   vehicleId: string
+}
+
+// Compress image before upload
+function compressImage(file: File, maxWidth: number = 1600, quality: number = 0.7): Promise<File> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')!
+    const img = new Image()
+    
+    img.onload = () => {
+      // Calculate new dimensions
+      let { width, height } = img
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width
+        width = maxWidth
+      }
+      
+      // Also check height and adjust if needed
+      const maxHeight = 1200
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height
+        height = maxHeight
+      }
+      
+      canvas.width = width
+      canvas.height = height
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height)
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const compressedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          })
+          resolve(compressedFile)
+        } else {
+          resolve(file)
+        }
+      }, 'image/jpeg', quality)
+    }
+    
+    img.src = URL.createObjectURL(file)
+  })
 }
 
 const PHOTO_TYPES = [
@@ -25,11 +69,14 @@ function VehiclePhotoUpload({ vehicleId, slot, onUploadComplete }: {
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'camera' | 'gallery'>('camera');
+  const [compressing, setCompressing] = useState(false);
 
   const handleUpload = async () => {
     if (!file) return;
     
     setUploading(true);
+    setCompressing(true);
     
     try {
       if (!supabase) {
@@ -37,13 +84,19 @@ function VehiclePhotoUpload({ vehicleId, slot, onUploadComplete }: {
         return;
       }
 
+      // Compress the image before upload
+      const compressedFile = await compressImage(file, 1600, 0.6);
+      console.log(`Original size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Compressed size: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      setCompressing(false);
+
       const fileName = `${slot}_${Date.now()}.jpg`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('vehicle-photos')
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           upsert: true,
-          contentType: file.type,
+          contentType: 'image/jpeg',
           cacheControl: '3600'
         });
       
@@ -83,6 +136,7 @@ function VehiclePhotoUpload({ vehicleId, slot, onUploadComplete }: {
       alert('Upload failed: ' + (error as Error).message);
     } finally {
       setUploading(false);
+      setCompressing(false);
     }
   };
 
@@ -93,6 +147,13 @@ function VehiclePhotoUpload({ vehicleId, slot, onUploadComplete }: {
         alert('Please select an image file');
         return;
       }
+      
+      // Check if file is extremely large (over 100MB) - very generous limit
+      if (selectedFile.size > 100 * 1024 * 1024) {
+        alert('Image is extremely large. Please try taking a new photo or selecting a different image.');
+        return;
+      }
+      
       setFile(selectedFile);
     }
   };
@@ -100,28 +161,77 @@ function VehiclePhotoUpload({ vehicleId, slot, onUploadComplete }: {
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-gray-400 transition-colors">
       <div className="text-center">
-        <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+        <div className="flex justify-center mb-3">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setUploadMode('camera')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                uploadMode === 'camera'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Camera className="h-4 w-4 mr-1" />
+              Camera
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('gallery')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                uploadMode === 'gallery'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Image className="h-4 w-4 mr-1" />
+              Gallery
+            </button>
+          </div>
+        </div>
+        
+        {uploadMode === 'camera' ? (
+          <Camera className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+        ) : (
+          <Smartphone className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+        )}
+        
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {slot.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
         </label>
+        
+        <p className="text-xs text-gray-500 mb-3">
+          {uploadMode === 'camera' 
+            ? 'Take a new photo with your camera' 
+            : 'Choose from your phone\'s photo gallery'
+          }
+        </p>
+        
         {file && (
           <div className="mb-2 text-xs text-gray-600">
-            Selected: {file.name}
+            Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)}MB)
+            {file.size > 3 * 1024 * 1024 && (
+              <div className="text-blue-600 mt-1">
+                Large file - will be automatically compressed to reduce size
+              </div>
+            )}
           </div>
         )}
+        
         <input 
           type="file" 
           onChange={handleFileSelect}
           accept="image/*"
-          capture="environment"
+          capture={uploadMode === 'camera' ? "environment" : undefined}
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 mb-3"
         />
+        
         <button 
           onClick={handleUpload} 
-          disabled={uploading || !file}
-          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium w-full"
+          disabled={uploading || compressing || !file}
+          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium w-full flex items-center justify-center"
         >
-          {uploading ? 'Uploading...' : 'Upload Photo'}
+          {compressing ? 'Compressing...' : uploading ? 'Uploading...' : 'Upload Photo'}
         </button>
       </div>
     </div>
@@ -176,6 +286,16 @@ export function PhotoUploadManager({ vehicleId }: PhotoUploadManagerProps) {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="font-medium text-blue-900 mb-2">📱 Photo Upload Options:</h4>
+        <ul className="text-sm text-blue-800 space-y-1">
+          <li>• <strong>Camera Mode:</strong> Take new photos directly with your phone camera</li>
+          <li>• <strong>Gallery Mode:</strong> Upload photos you've already taken and saved</li>
+          <li>• You can switch between modes for each photo type</li>
+          <li>• Perfect for uploading photos taken earlier when you get back to your desk</li>
+        </ul>
+      </div>
+
       {PHOTO_TYPES.map((type) => {
         const typePhotos = getPhotosForType(type.id)
 
