@@ -17,12 +17,30 @@ export function AdminDashboard() {
   }, [])
 
   async function fetchVehicles() {
-    const { data } = await supabase
-      .from('vehicles')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    setVehicles(data || [])
+    try {
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        setVehicles([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching vehicles:', error)
+        alert('Error loading vehicles: ' + error.message)
+        return
+      }
+      
+      console.log('Fetched vehicles for admin:', data)
+      setVehicles(data || [])
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+      alert('Failed to load vehicles. Please refresh the page.')
+    }
   }
 
   async function fetchInquiries() {
