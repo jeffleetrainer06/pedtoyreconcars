@@ -1,7 +1,28 @@
-import { VehicleGrid}  from './VehicleGrid'
-import { Shield, CheckCircle, Clock, Award } from 'lucide-react'
+import { VehicleGrid } from './VehicleGrid'
+import { Shield, CheckCircle, Clock, Award, Share2, Smartphone } from 'lucide-react'
 
 export function HomePage() {
+  const shareApp = () => {
+    const url = window.location.origin
+    const text = `Check out our pre-owned vehicle inventory at Pedersen Toyota`
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Pedersen Toyota - Pre-Owned Vehicles',
+        text: text,
+        url: url
+      }).catch(console.error)
+    } else {
+      // Fallback for browsers without Web Share API
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!\n\nYou can now paste this link in a text message to send to customers. The link will work on any phone or computer.')
+      }).catch(() => {
+        // Final fallback
+        prompt('Share this link with customers (works on any device):', url)
+      })
+    }
+  }
+
   return (
     <div>
       {/* Hero Section */}
@@ -13,6 +34,35 @@ export function HomePage() {
           <p className="text-xl md:text-2xl text-red-100 mb-8">
             Reserve your next vehicle during our reconditioning process
           </p>
+          <button
+            onClick={shareApp}
+            className="bg-white text-red-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center mx-auto"
+          >
+            <Share2 className="h-5 w-5 mr-2" />
+            Share with Customers
+          </button>
+        </div>
+      </div>
+
+      {/* Share Instructions for Salespeople */}
+      <div className="bg-green-50 py-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <Smartphone className="h-8 w-8 text-green-600 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-green-800 mb-2">
+              For Salespeople: Easy Customer Sharing
+            </h3>
+            <p className="text-green-700 text-sm mb-4">
+              Click the "Share" button above to send this inventory to customers via text message or email.
+              The link works perfectly on all phones and computers.
+            </p>
+            <div className="bg-white rounded-lg p-4 text-left max-w-md mx-auto">
+              <p className="text-sm text-gray-700">
+                <strong>Sample text message:</strong><br />
+                "Hi [Customer Name], here's our current pre-owned inventory. You can reserve any vehicle with no deposit: [LINK]"
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
